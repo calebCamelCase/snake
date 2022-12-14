@@ -13,16 +13,23 @@ let snake = [
 
 let score = 0;
 
+let speed = 100;
+
 let change_direction = false;
 
 let dx = 10;
 let dy = 0;
+
+// food
+let foodX
+let foodY
 
 // Make the canvas
 const snakeBoard = document.getElementById('snakeBoard');
 const snakeBoardCtx = snakeBoard.getContext('2d');
 
 // draw the border around the canvas
+// coordinate 0,0 is top left
 
 const clearCanvas =()=> {
     snakeBoardCtx.fillStyle = boardBg;
@@ -48,10 +55,26 @@ const moveSnake =()=>{
     const head = {x: snake[0].x + dx, y: snake[0].y + dy}
     snake.unshift(head)
 
-    snake.pop();
+    const hasEatenFood = snake[0].x === foodX && snake[0].y === foodY
+
+    if(hasEatenFood) {
+        score += 10
+        const scoreDisplay = document.getElementById('score');
+        scoreDisplay.innerText = score
+        generateFood();
+    } else {
+        snake.pop();
+    }
+
+    // if(score > 50){
+    //     speed -=10
+    // }
+
 }
 
 const init =()=> {
+    // return completes a task; all functions after return end
+    if(hasGameEnded()) return
 
     change_direction = false
     // add timer
@@ -59,11 +82,12 @@ const init =()=> {
     setTimeout(function onTick(){
         clearCanvas();
         drawSnake();
+        drawFood();
         moveSnake();
 
         // call init()
         init()
-    }, 100)
+    }, speed)
 }
 
 const changeDirection=(e)=>{
@@ -104,7 +128,50 @@ const changeDirection=(e)=>{
 
 }
 
+const hasGameEnded =()=> {
+    // snake bites itself
+    for( let i = 4; i < snake.length; i++) {
+        if (snake[i].x === snake[0].x && snake[i].y === snake[0].y) {
+            return true
+        }
+    };
+
+    // snake hits wall
+    const hitLeftWall = snake[0].x < 0; //top left of object is being considered, not the whole object
+    const hitRightWall = snake[0].x > snakeBoard.width - 10;
+    const hitTopWall = snake[0].y < 0;
+    const hitBottomWall = snake[0].y > snakeBoard.height - 10;
+
+    return hitLeftWall || hitRightWall || hitTopWall || hitBottomWall
+}
+
+// randomize food
+const randomFood =(min, max)=> {
+    return Math.round(Math.random() * (max - min) / 10) * 10
+}
+
+const generateFood =()=>{
+    foodX = randomFood(0, snakeBoard.width - 10);
+    foodY = randomFood(0, snakeBoard.height - 10);
+
+    snake.forEach(part => {
+        const hasEaten = part.x == foodX && part.y == foodY;
+
+        if(hasEaten) {
+            generateFood()
+        }
+    });
+};
+
+// draw food
+const drawFood=()=>{
+    snakeBoardCtx.fillStyle = '#2d6a4f';
+    snakeBoardCtx.strokeStyle = '#52b788';
+    snakeBoardCtx.fillRect(foodX, foodY, 10, 10);
+    snakeBoardCtx.strokeRect(foodX, foodY, 10, 10);
+}
 
 init()
 
 document.addEventListener('keydown', changeDirection)
+generateFood();
